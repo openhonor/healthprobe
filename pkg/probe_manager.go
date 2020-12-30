@@ -1,76 +1,37 @@
 package pkg
 
-import (
-	"code.byted.org/gopkg/logs"
-	"log"
-	"os"
-	"time"
-)
-
 func LoadConfig() {
 
 }
 
-type Probe struct {
-	Task Task
+type ProbeManage struct {
+	// map, key:task id ,value stop channel
+	Tasks map[int](chan interface{})
 }
 
-// 探测函数
-type ProbeFunc func() (success bool)
+func (m *ProbeManage) Start(exit chan interface{}) {
+	stop := make(chan interface{})
 
-func (p *Probe) DoProbe(f ProbeFunc) {
-	defer logs.Flush()
-
-	result := f()
-
-	var resStr string
-	if result {
-		resStr = "Success"
-	} else {
-		resStr = "Fail"
+	task := Task{
+		Id:   0,
+		Name: "task1",
+		Nodes: []Node{
+			{
+				Name: "cluster1",
+				IP:   "www.baidu.com",
+			},
+		},
+		TaskConfig: TaskConfig{
+			Interval:  1,
+			Threshold: 1,
+		},
+		Enable: true,
 	}
-	logs.Infof("Task {id:%d, name: %s } is doing probe,result is %s !!", p.Task.Id, p.Task.Name, resStr)
-}
-
-func (p *Probe) Run(stop chan interface{}) {
-	defer logs.Flush()
-	for {
-		select {
-		case <-stop:
-			logs.Infof("Task {id:%d, name: %s } exit !!", p.Task.Id, p.Task.Name)
-			return
-		default:
-			logs.Infof("Task {id:%d, name: %s } is Running !!", p.Task.Id, p.Task.Name)
-			time.Sleep(time.Duration(p.Task.TaskConfig.Interval) * time.Second)
-			p.DoProbe(func() (success bool) {
-				return false
-			})
-		}
-	}
-}
-func (p *Probe) Read() []byte {
-	fp, err := os.OpenFile("./data.json", os.O_RDONLY, 0755)
-	defer fp.Close()
-	if err != nil {
-		log.Fatal(err)
-	}
-	data := make([]byte, 100)
-	n, err := fp.Read(data)
-	if err != nil {
-		log.Fatal(err)
-	}
-	//fmt.Println(string(data[:n]))
-	return data[:n]
-}
-
-func (p *Probe) Write(data []byte) {
-	fp, err := os.OpenFile("data.json", os.O_RDWR|os.O_CREATE, 0755)
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer fp.Close()
-	_, err = fp.Write(data)
-	if err != nil {
-		log.Fatal(err)
-	}
+	probe := &Probe{
+		Task: task,
+		ProbeFunc: func() (success bool) {
+			return false
+		}}
+	go probe.Run(stop)
+	<-exit
 }
