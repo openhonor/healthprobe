@@ -1,12 +1,27 @@
 package pkg
 
+import "code.byted.org/gopkg/logs"
+
 func LoadConfig() {
 
 }
 
 type ProbeManage struct {
+	Tasks map[int]*Probe
+
 	// map, key:task id ,value stop channel
-	Tasks map[int](chan interface{})
+	Running map[int]chan interface{}
+}
+
+func (m *ProbeManage) AddTask(probe *Probe) {
+
+}
+func (m *ProbeManage) IsTaskRunning(task *Probe) bool {
+	if _, ok := m.Running[task.PTask.Id]; ok {
+		return true
+	} else {
+		return false
+	}
 }
 
 func (m *ProbeManage) Start(exit chan interface{}) {
@@ -28,10 +43,20 @@ func (m *ProbeManage) Start(exit chan interface{}) {
 		Enable: true,
 	}
 	probe := &Probe{
-		Task: task,
+		PTask: task,
 		ProbeFunc: func() (success bool) {
 			return false
-		}}
+		},
+		OnFaillure: func() error {
+			logs.Error("send alarm ")
+			return nil
+		},
+		OnSuccess: func() error {
+			logs.Info("send success message")
+			return nil
+		},
+	}
 	go probe.Run(stop)
+
 	<-exit
 }

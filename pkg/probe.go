@@ -4,12 +4,15 @@ import (
 	"code.byted.org/gopkg/logs"
 	"log"
 	"os"
+	"reflect"
 	"time"
 )
 
 type Probe struct {
-	Task      Task
-	ProbeFunc ProbeFunc
+	PTask      Task
+	ProbeFunc  ProbeFunc
+	OnSuccess  func() error
+	OnFaillure func() error
 }
 
 // 探测函数
@@ -18,15 +21,22 @@ type ProbeFunc func() (success bool)
 func (p *Probe) DoProbe(f ProbeFunc) {
 	defer logs.Flush()
 
-	result := f()
-
+	var err error
 	var resStr string
-	if result {
+	if result := f(); result {
 		resStr = "Success"
+		err = p.OnFaillure()
 	} else {
 		resStr = "Fail"
+		err = p.OnFaillure()
 	}
-	logs.Infof("Task {id:%d, name: %s } is doing probe,result is %s !!", p.Task.Id, p.Task.Name, resStr)
+
+	if err != nil {
+		logs.Infof("PTask {id:%d, name: %s } fail in handler function ,err: %s ", p.PTask.Id, p.PTask.Name, err.Error())
+	}
+
+	logs.Infof("PTask {id:%d, name: %s } is doing probe,result is %s !!", p.PTask.Id, p.PTask.Name, resStr)
+	return
 }
 
 func (p *Probe) Run(stop chan interface{}) {
@@ -34,16 +44,26 @@ func (p *Probe) Run(stop chan interface{}) {
 	for {
 		select {
 		case <-stop:
-			logs.Infof("Task {id:%d, name: %s } exit !!", p.Task.Id, p.Task.Name)
+			logs.Infof("PTask {id:%d, name: %s } exit !!", p.PTask.Id, p.PTask.Name)
 			return
 		default:
-			logs.Infof("Task {id:%d, name: %s } is Running !!", p.Task.Id, p.Task.Name)
-			time.Sleep(time.Duration(p.Task.TaskConfig.Interval) * time.Second)
+			logs.Infof("PTask {id:%d, name: %s } is Running !!", p.PTask.Id, p.PTask.Name)
+			time.Sleep(time.Duration(p.PTask.TaskConfig.Interval) * time.Second)
 
 			p.DoProbe(p.ProbeFunc)
 		}
 	}
 }
+
+// 只比较 task 结构体
+func (p *Probe) Equal(p1 *Probe) bool {
+	if p1 == nil {
+		return false
+	}
+
+	return reflect.DeepEqual(p.PTask, p1.PTask)
+}
+
 func (p *Probe) Read() []byte {
 	fp, err := os.OpenFile("./data.json", os.O_RDONLY, 0755)
 	defer fp.Close()

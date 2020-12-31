@@ -2,7 +2,7 @@ package pkg
 
 // 巡检任务
 type Task struct {
-	Id         int64      `json":id"`
+	Id         int      `json":id"`
 	Name       string     `json":name"`
 	Nodes      []Node     `json":nodes"`
 	TaskConfig TaskConfig `json":task_config"`
