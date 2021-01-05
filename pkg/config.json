@@ -1,0 +1,1 @@
+[{"Id":1,"Name":"task1","Nodes":[{"Name":"cluster1","IP":"www.baidu.com"}],"TaskConfig":{"Interval":1,"Threshold":1},"Enable":false},{"Id":2,"Name":"task2","Nodes":[{"Name":"cluster2","IP":"www.google.com"}],"TaskConfig":{"Interval":2,"Threshold":2},"Enable":true}]

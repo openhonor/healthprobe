@@ -15,8 +15,8 @@ type Probe struct {
 	//Stop       chan interface{}
 	PTask      *Task
 	ProbeFunc  ProbeFunc
-	OnSuccess  func() error
-	OnFaillure func() error
+	OnSuccess  HandleFunc
+	OnFaillure HandleFunc
 	lock       sync.Mutex
 	// 集群失败次数 key  nodename value 为失败次数
 	FailCluster map[string]int
@@ -37,6 +37,7 @@ const PROBE_TIMEOUT = time.Second * 3
 
 // 探测函数
 type ProbeFunc func(id int, taskName, nodeName, nodeIP string) (success bool)
+type HandleFunc func(id int, taskName, nodeName, nodeIP string) (err error)
 
 func (p *Probe) DoProbe(f ProbeFunc) {
 	defer logs.Flush()
@@ -85,7 +86,7 @@ func (p *Probe) doProbeForSingleNode(nodeName, nodeIP string) (bool, error) {
 			return p.ProbeFunc(p.PTask.Id, p.PTask.Name, nodeName, nodeIP)
 		})
 		if probeErr != nil {
-			logs.Infof("PTask {id:%d, name: %s } Do probe,err: %s ", p.PTask.Id, p.PTask.Name, probeErr.Error())
+			logs.Infof("PTask (%d-%s) Do probe,err: %s ", p.PTask.Id, p.PTask.Name, probeErr.Error())
 		}
 
 		if p.FailCluster == nil {
@@ -94,7 +95,9 @@ func (p *Probe) doProbeForSingleNode(nodeName, nodeIP string) (bool, error) {
 
 		if success {
 			resStr = "Success"
-			err = p.OnSuccess()
+
+			logs.Infof("PTask (%d-%s) call  OnSuccess()... ...", p.PTask.Id, p.PTask.Name)
+			err = p.OnSuccess(p.PTask.Id, p.PTask.Name, nodeName, nodeIP)
 			// 失败次数清空
 			p.ReSetFail(nodeName)
 		} else {
@@ -103,13 +106,15 @@ func (p *Probe) doProbeForSingleNode(nodeName, nodeIP string) (bool, error) {
 
 			// 失败次数超阈值
 			if p.FailCluster[nodeName] >= p.PTask.TaskConfig.Threshold {
-				err = p.OnFaillure()
+				logs.Infof("PTask (%d-%s) fails exceed task's fail threshold: %d, call  OnFaillure()... ...",
+					p.PTask.Id, p.PTask.Name, p.PTask.TaskConfig.Threshold)
+				err = p.OnFaillure(p.PTask.Id, p.PTask.Name, nodeName, nodeIP)
 			}
 		}
 		if err != nil {
-			logs.Infof("PTask {id:%d, name: %s } fail in handler function ,err: %s ", p.PTask.Id, p.PTask.Name, err.Error())
+			logs.Infof("PTask (%d-%s) fail in handler function ,err: %s ", p.PTask.Id, p.PTask.Name, err.Error())
 		}
-		logs.Infof("PTask {id:%d, name: %s } is doing probe,result is %s !!", p.PTask.Id, p.PTask.Name, resStr)
+		logs.Infof("PTask (%d-%s) is doing probe,result is %s !!", p.PTask.Id, p.PTask.Name, resStr)
 	}()
 	return success, err
 }
@@ -119,10 +124,10 @@ func (p *Probe) Run(stop chan interface{}) {
 	for {
 		select {
 		case <-stop:
-			logs.Infof("PTask {id:%d, name: %s } exit !!", p.PTask.Id, p.PTask.Name)
+			logs.Infof("PTask (%d-%s) exit !!", p.PTask.Id, p.PTask.Name)
 			return
 		default:
-			logs.Infof("PTask {id:%d, name: %s } is Running !!", p.PTask.Id, p.PTask.Name)
+			logs.Infof("PTask (%d-%s) is Running !!", p.PTask.Id, p.PTask.Name)
 			time.Sleep(time.Duration(p.PTask.TaskConfig.Interval) * time.Second)
 
 			p.DoProbe(p.ProbeFunc)

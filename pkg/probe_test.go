@@ -27,11 +27,11 @@ func TestProbe_Equal(t *testing.T) {
 			logs.Info("probe ...")
 			return true
 		},
-		OnFaillure: func() error {
+		OnFaillure: func(id int, name, nodename, nodeip string) error {
 			logs.Error("send alarm ")
 			return nil
 		},
-		OnSuccess: func() error {
+		OnSuccess: func(id int, name, nodename, nodeip string) error {
 			logs.Info("send success message")
 			return nil
 		},
@@ -57,11 +57,11 @@ func TestProbe_Equal(t *testing.T) {
 			logs.Info("probe ...")
 			return true
 		},
-		OnFaillure: func() error {
+		OnFaillure: func(id int, name, nodename, nodeip string) error {
 			logs.Error("send alarm ")
 			return nil
 		},
-		OnSuccess: func() error {
+		OnSuccess: func(id int, name, nodename, nodeip string) error {
 			logs.Info("send success message")
 			return nil
 		},
@@ -92,11 +92,11 @@ func TestProbe_ManageStart(t *testing.T) {
 			logs.Info("probe ...")
 			return true
 		},
-		OnFaillure: func() error {
+		OnFaillure: func(id int, name, nodename, nodeip string) error {
 			logs.Error("send alarm ")
 			return nil
 		},
-		OnSuccess: func() error {
+		OnSuccess: func(id int, name, nodename, nodeip string) error {
 			logs.Info("send success message")
 			return nil
 		},
@@ -122,11 +122,11 @@ func TestProbe_ManageStart(t *testing.T) {
 			logs.Info("probe22222 ...")
 			return true
 		},
-		OnFaillure: func() error {
+		OnFaillure: func(id int, name, nodename, nodeip string) error {
 			logs.Error("send alarm22222 ")
 			return nil
 		},
-		OnSuccess: func() error {
+		OnSuccess: func(id int, name, nodename, nodeip string) error {
 			logs.Info("send success message2222")
 			return nil
 		},
@@ -139,7 +139,7 @@ func TestProbe_ManageStart(t *testing.T) {
 	m.AddTask(p2)
 
 	time.Sleep(10 * time.Second)
-	m.RemoveTask(p1)
+	m.RemoveTask(p1.PTask.Id)
 	m.Start(exit)
 
 }
@@ -186,48 +186,52 @@ func TestRead_jsonConfig(t *testing.T) {
 }
 func Test_RunTask(t *testing.T) {
 
-	m := NewProbeMange(time.Second*3)
-	//exit := make(chan interface{})
+	m := NewProbeMange(time.Second * 3)
 
-	task1 := &Probe{
-		PTask: newTask(1, "task1", "cluster111"),
-		ProbeFunc: func(id int, name, nodename, nodeip string) (success bool) {
-			time.Sleep(2 * time.Second)
-			logs.Infof("probe111 ...%s-%s", nodename, nodeip)
-			return true
-		},
-		OnFaillure: func() error {
-			logs.Error("send alarm111 ")
-			return nil
-		},
-		OnSuccess: func() error {
-			logs.Infof("send success message111")
-			return nil
-		},
-	}
-	task2 := &Probe{
-		PTask: newTask(2, "task2", "cluster222"),
-		ProbeFunc: func(id int, name, nodename, nodeip string) (success bool) {
-			time.Sleep(20 * time.Second)
-			logs.Infof("probe222 ...%s-%s", nodename, nodeip)
-			return true
-		},
-		OnFaillure: func() error {
-			logs.Error("send alarm222 ")
-			return nil
-		},
-		OnSuccess: func() error {
-			logs.Info("send success message222")
-			return nil
-		},
-	}
-	//m.AddTask(task1)
-	m.AddTask(task2)
+	exit := make(chan interface{})
+	//defer close(exit)
+	//task1 := &Probe{
+	//	PTask: newTask(1, "task1", "cluster111"),
+	//	ProbeFunc: func(id int, name, nodename, nodeip string) (success bool) {
+	//		time.Sleep(2 * time.Second)
+	//		logs.Infof("probe111 ...%s-%s", nodename, nodeip)
+	//		return true
+	//	},
+	//	OnFaillure: func(id int, name, nodename, nodeip string) error {
+	//		logs.Error("send alarm111 ")
+	//		return nil
+	//	},
+	//	OnSuccess: func(id int, name, nodename, nodeip string) error {
+	//		logs.Infof("send success message111")
+	//		return nil
+	//	},
+	//}
+	//task2 := &Probe{
+	//	PTask: newTask(2, "task2", "cluster222"),
+	//	ProbeFunc: func(id int, name, nodename, nodeip string) (success bool) {
+	//		time.Sleep(20 * time.Second)
+	//		logs.Infof("probe222 ...%s-%s", nodename, nodeip)
+	//		return true
+	//	},
+	//	OnFaillure: func(id int, name, nodename, nodeip string) error {
+	//		logs.Error("send alarm222 ")
+	//		return nil
+	//	},
+	//	OnSuccess: func(id int, name, nodename, nodeip string) error {
+	//		logs.Info("send success message222")
+	//		return nil
+	//	},
+	//}
+	////m.AddTask(task1)
+	//m.AddTask(task2)
+	//
+	//time.Sleep(10 * time.Second)
+	//m.RemoveTask(task1)
+	//time.Sleep(30 * time.Second)
+	go m.Start(exit)
 
-	time.Sleep(10 * time.Second)
-	m.RemoveTask(task1)
-	time.Sleep(30 * time.Second)
-	//m.Start(exit)
+	time.Sleep(50 * time.Second)
+	close(exit)
 }
 func newTask(id int, taskName, clustername string) *Task {
 	p := Task{
