@@ -147,12 +147,14 @@ func TestProbe_ManageStart(t *testing.T) {
 func TestWrite_jsonConfig(t *testing.T) {
 	var res []Task
 	PTask := Task{
-		Id:   0,
-		Name: "task1",
+		Id:          1,
+		Name:        "task1",
+		HttpHeaders: map[string]string{"A": "A"},
+		Url:         "https://stackoverflow.com/questions/47498811/how-to-send-a-map-in-json/47514487",
 		Nodes: []Node{
 			{
 				Name: "cluster1",
-				IP:   "www.baidu.com",
+				IP:   "151.101.1.69",
 			},
 		},
 		TaskConfig: TaskConfig{
@@ -162,12 +164,14 @@ func TestWrite_jsonConfig(t *testing.T) {
 		Enable: true,
 	}
 	PTask2 := Task{
-		Id:   2,
-		Name: "task2",
+		Id:          2,
+		Name:        "task2",
+		HttpHeaders: map[string]string{"A": "A"},
+		Url:         "https://stackoverflow.com/questions/47498811/how-to-send-a-map-in-json/47514487",
 		Nodes: []Node{
 			{
 				Name: "cluster2",
-				IP:   "www.google.com",
+				IP:   "1.2.3.4",
 			},
 		},
 		TaskConfig: TaskConfig{

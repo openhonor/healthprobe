@@ -2,11 +2,13 @@ package pkg
 
 // 巡检任务
 type Task struct {
-	Id         int      `json":id"`
-	Name       string     `json":name"`
-	Nodes      []Node     `json":nodes"`
-	TaskConfig TaskConfig `json":task_config"`
-	Enable     bool       `json":enable"`
+	Id          int               `json":id"`
+	Name        string            `json":name"`
+	Url         string            `json":url"`
+	HttpHeaders map[string]string `json":http_headers"`
+	Nodes       []Node            `json":nodes"`
+	TaskConfig  TaskConfig        `json":task_config"`
+	Enable      bool              `json":enable"`
 }
 
 type Node struct {
