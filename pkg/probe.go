@@ -36,7 +36,7 @@ func (p *Probe) ReSetFail(nodename string) {
 const PROBE_TIMEOUT = time.Second * 3
 
 // 探测函数
-type ProbeFunc func(id int, taskName, nodeName, nodeIP string) (success bool)
+type ProbeFunc func(id int, taskName, nodeName, nodeIP,requestURL string,requestHeader map[string]string) (success bool)
 type HandleFunc func(id int, taskName, nodeName, nodeIP string) (err error)
 
 func (p *Probe) DoProbe(f ProbeFunc) {
@@ -83,7 +83,7 @@ func (p *Probe) doProbeForSingleNode(nodeName, nodeIP string) (bool, error) {
 	go func() {
 		// 探测函数
 		success, probeErr = p.AsyncCall(PROBE_TIMEOUT, nodeName, nodeIP, func() bool {
-			return p.ProbeFunc(p.PTask.Id, p.PTask.Name, nodeName, nodeIP)
+			return p.ProbeFunc(p.PTask.Id, p.PTask.Name, nodeName, nodeIP,p.PTask.Url,p.PTask.HttpHeaders)
 		})
 		if probeErr != nil {
 			logs.Infof("PTask (%d-%s) Do probe,err: %s ", p.PTask.Id, p.PTask.Name, probeErr.Error())
@@ -145,7 +145,7 @@ func (p *Probe) Equal(p1 *Probe) bool {
 }
 
 func (p *Probe) Read() []byte {
-	fp, err := os.OpenFile("./data.json", os.O_RDONLY, 0755)
+	fp, err := os.OpenFile("./tempdata.json", os.O_RDONLY, 0755)
 	defer fp.Close()
 	if err != nil {
 		log.Fatal(err)
@@ -155,12 +155,12 @@ func (p *Probe) Read() []byte {
 	if err != nil {
 		log.Fatal(err)
 	}
-	//fmt.Println(string(data[:n]))
+	//fmt.Println(string(tempdata[:n]))
 	return data[:n]
 }
 
 func (p *Probe) Write(data []byte) {
-	fp, err := os.OpenFile("data.json", os.O_RDWR|os.O_CREATE, 0755)
+	fp, err := os.OpenFile("tempdata.json", os.O_RDWR|os.O_CREATE, 0755)
 	if err != nil {
 		log.Fatal(err)
 	}

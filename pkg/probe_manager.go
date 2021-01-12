@@ -3,6 +3,7 @@ package pkg
 import (
 	"code.byted.org/gopkg/logs"
 	"fmt"
+	"testesr/pkg/request"
 	"time"
 )
 
@@ -76,12 +77,22 @@ func (m *ProbeManage) IsTaskRunning(taskId int) bool {
 	}
 }
 
-// sync tasks data from source
+// sync tasks tempdata from source
 func (m *ProbeManage) Start(exit chan interface{}) {
 
-	ProbeFunc := func(id int, name, nodename, nodeip string) (success bool) {
-		logs.Info("task %d-%s probe for cluster:%s-%s", id, name, nodename, nodeip)
-		return true
+	// TODO
+	ProbeFunc := func(id int, name, nodename, nodeip, url string, requestHeader map[string]string) (success bool) {
+
+		res, err := request.DoRequest(url, nodeip, requestHeader)
+		if err == nil {
+			logs.Info("task %d-%s probe success for cluster:%s-%s,requestURL: %s,requestHeader: %#v", id, name, nodename, nodeip, url, requestHeader)
+
+		} else {
+			logs.Errorf("task %d-%s probe fail for cluster:%s-%s,err:%s,requestURL: %s,requestHeader: %#v", id, name, nodename, nodeip, err, url, requestHeader)
+
+		}
+
+		return res
 	}
 	OnFaillure := func(id int, name, nodename, nodeip string) error {
 		logs.Error("task %d-%s send alarm for cluster:%s-%s", id, name, nodename, nodeip)

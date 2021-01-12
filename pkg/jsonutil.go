@@ -10,7 +10,7 @@ func Write(tasks []Task) {
 	defer logs.Flush()
 
 	// 创建文件
-	filePtr, err := os.Create("config.json")
+	filePtr, err := os.Create("tempdata/config.json")
 	if err != nil {
 		logs.Error("create file err%s", err.Error())
 		return
@@ -21,7 +21,7 @@ func Write(tasks []Task) {
 	encoder.Encode(tasks)
 }
 func Read() []Task {
-	filePtr, err := os.Open("config.json")
+	filePtr, err := os.Open("tempdata/config.json")
 	if err != nil {
 		logs.Error("get file err%s", err.Error())
 		return nil

@@ -187,6 +187,7 @@ func TestWrite_jsonConfig(t *testing.T) {
 func TestRead_jsonConfig(t *testing.T) {
 	tasks := Read()
 	t.Log("tasks ", tasks)
+	//reflect.Copy()
 }
 func Test_RunTask(t *testing.T) {
 
